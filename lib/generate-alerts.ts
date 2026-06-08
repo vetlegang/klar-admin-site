@@ -117,6 +117,26 @@ export function generateAlerts(clients: Client[]): Alert[] {
       );
     }
 
+    // 1b. Frist nærmer seg (1-3 dager frem i tid)
+    if (c.nesteFrist && !isOverdue(c.nesteFrist)) {
+      const daysUntil = Math.ceil(
+        (new Date(c.nesteFrist).getTime() - new Date(TODAY).getTime()) / (1000 * 60 * 60 * 24)
+      );
+      if (daysUntil <= 3) {
+        push(
+          'forfalt_frist',
+          daysUntil === 0 ? 'Frist i dag' : `Frist om ${daysUntil} dag${daysUntil === 1 ? '' : 'er'}`,
+          `${c.nesteAction || 'Neste action'} skal være ferdig ${daysUntil === 0 ? 'i dag' : `om ${daysUntil} dag${daysUntil === 1 ? '' : 'er'}`} (${c.nesteFrist}).`,
+          daysUntil <= 1 ? 'critical' : 'high',
+          {
+            dueDate: c.nesteFrist ?? undefined,
+            actionLabel: 'Gjør klar nå',
+            recommendedAction: c.nesteAction || 'Forbered og lever til kunden.',
+          }
+        );
+      }
+    }
+
     // 2. Mangler neste action
     if (!c.nesteAction && c.status !== 'Pauset') {
       push(
