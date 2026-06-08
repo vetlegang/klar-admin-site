@@ -42,6 +42,8 @@ export default function VarslerPage() {
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('Alle');
   const [overrides, setOverrides] = useState<Record<string, 'done' | 'snoozed'>>({});
   const [loaded, setLoaded] = useState(false);
+  const [sendStatus, setSendStatus] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle');
+  const [sendMsg, setSendMsg] = useState('');
 
   useEffect(() => {
     setClients(getClients());
@@ -83,6 +85,46 @@ export default function VarslerPage() {
     saveOverrides(n);
   }
 
+  async function handleSendEmail() {
+    const alertsToSend = visible.filter((a) => a.severity === 'critical' || a.severity === 'high');
+    if (!alertsToSend.length) {
+      setSendMsg('Ingen kritiske eller høy-prioritet varsler å sende.');
+      setSendStatus('error');
+      setTimeout(() => { setSendStatus('idle'); setSendMsg(''); }, 4000);
+      return;
+    }
+    try {
+      const raw = localStorage.getItem('klyr_email_settings');
+      const settings = raw ? JSON.parse(raw) : null;
+      const recipients: string[] = [settings?.email1, settings?.email2].filter(Boolean);
+      if (!recipients.length) {
+        setSendMsg('Ingen e-postmottakere satt. Gå til Innstillinger og lagre e-postadresser.');
+        setSendStatus('error');
+        setTimeout(() => { setSendStatus('idle'); setSendMsg(''); }, 5000);
+        return;
+      }
+      setSendStatus('sending');
+      setSendMsg(`Sender ${alertsToSend.length} varsler til ${recipients.join(', ')}…`);
+      const res = await fetch('/api/send-alerts-digest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ alerts: alertsToSend, recipients }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setSendStatus('ok');
+        setSendMsg(`✓ E-post sendt med ${alertsToSend.length} varsler`);
+      } else {
+        setSendStatus('error');
+        setSendMsg(`Feil: ${data.error ?? 'Ukjent feil'}`);
+      }
+    } catch (err) {
+      setSendStatus('error');
+      setSendMsg(`Nettverksfeil: ${String(err)}`);
+    }
+    setTimeout(() => { setSendStatus('idle'); setSendMsg(''); }, 6000);
+  }
+
   const snoozedAlerts = allAlerts.filter((a) => overrides[a.id] === 'snoozed');
   const doneAlerts = allAlerts.filter((a) => overrides[a.id] === 'done');
 
@@ -97,9 +139,23 @@ export default function VarslerPage() {
         title="Varsler"
         subtitle={`${visible.length} åpne varsler`}
         actions={
-          <Link href="/kunder/ny" className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 text-white text-xs font-medium rounded-lg hover:bg-zinc-700 transition-colors">
-            + Legg til kunde
-          </Link>
+          <div className="flex items-center gap-2">
+            {sendMsg && (
+              <span className={`text-xs px-2 py-1 rounded-lg ${sendStatus === 'ok' ? 'text-green-700 bg-green-50' : sendStatus === 'error' ? 'text-red-700 bg-red-50' : 'text-blue-700 bg-blue-50'}`}>
+                {sendMsg}
+              </span>
+            )}
+            <button
+              onClick={handleSendEmail}
+              disabled={sendStatus === 'sending'}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-zinc-700 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              {sendStatus === 'sending' ? 'Sender…' : '✉ Send varsler på e-post'}
+            </button>
+            <Link href="/kunder/ny" className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 text-white text-xs font-medium rounded-lg hover:bg-zinc-700 transition-colors">
+              + Legg til kunde
+            </Link>
+          </div>
         }
       />
 

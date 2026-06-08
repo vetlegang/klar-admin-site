@@ -14,6 +14,14 @@ export function getClients(): Client[] {
 
 function saveClients(clients: Client[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
+  // Silently sync to server (for cron job access) — fire and forget
+  if (typeof window !== 'undefined') {
+    fetch('/api/sync-clients', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clients }),
+    }).catch(() => { /* ignore — app works fine without KV */ });
+  }
 }
 
 export function getClient(id: string): Client | undefined {
