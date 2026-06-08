@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
     if (!apiKey) return NextResponse.json({ error: 'RESEND_API_KEY mangler' }, { status: 500 });
     if (!recipients.length) return NextResponse.json({ error: 'ALERT_RECIPIENTS mangler' }, { status: 500 });
 
-    // Read clients from KV
+    // Read clients from Upstash Redis REST API
     let clients: Client[] = [];
     if (kvUrl && kvToken) {
       const kvRes = await fetch(`${kvUrl}/get/fujii_clients`, {
@@ -42,7 +42,10 @@ export async function GET(req: NextRequest) {
       });
       if (kvRes.ok) {
         const { result } = await kvRes.json();
-        if (result) clients = JSON.parse(result);
+        if (result) {
+          // result is the raw JSON string we stored
+          clients = typeof result === 'string' ? JSON.parse(result) : result;
+        }
       }
     }
 

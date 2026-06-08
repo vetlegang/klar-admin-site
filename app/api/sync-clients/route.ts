@@ -23,14 +23,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, skipped: true });
     }
 
-    // Store using Vercel KV REST API (no SDK needed)
+    // Store using Upstash Redis REST API
     const res = await fetch(`${kvUrl}/set/fujii_clients`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${kvToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(JSON.stringify(clients)), // KV stores strings
+      headers: { Authorization: `Bearer ${kvToken}` },
+      body: JSON.stringify(clients),
     });
 
     if (!res.ok) {
