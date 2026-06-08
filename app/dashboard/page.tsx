@@ -12,8 +12,6 @@ import type { OptReminder } from '@/lib/reminders';
 
 const EMAIL_SETTINGS_KEY = 'klyr_email_settings';
 
-const TODAY = new Date().toISOString().split('T')[0];
-
 type UserFilter = 'Alle' | 'Vetle G.' | 'Markus S.';
 
 function fmt(dateStr: string) {
@@ -41,13 +39,14 @@ export default function DashboardPage() {
   const [allClients, setAllClients] = useState<Client[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [userFilter, setUserFilter] = useState<UserFilter>('Alle');
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const [optReminders, setOptReminders] = useState<OptReminder[]>([]);
   const [emailSettings, setEmailSettings] = useState<{ email1: string; email2: string; schemaUrl: string } | null>(null);
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
   const [reminderSent, setReminderSent] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
+  function load() {
     const clients = getClients();
     setAllClients(clients);
     setOptReminders(getOptReminders(clients));
@@ -56,6 +55,22 @@ export default function DashboardPage() {
       if (raw) setEmailSettings(JSON.parse(raw));
     } catch { /* ignore */ }
     setLoaded(true);
+    setLastUpdated(new Date());
+  }
+
+  useEffect(() => {
+    load();
+
+    const onFocus = () => load();
+    const onVisibility = () => { if (!document.hidden) load(); };
+
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function sendReminder(reminder: OptReminder) {
@@ -89,6 +104,8 @@ export default function DashboardPage() {
   );
 
   const tasks = useMemo(() => allClients.flatMap((c) => c.oppgaver), [allClients]);
+
+  const TODAY = new Date().toISOString().split('T')[0];
 
   if (!loaded) {
     return (
@@ -151,9 +168,10 @@ export default function DashboardPage() {
           title="Dashboard"
           subtitle={`Oversikt per ${fmt(TODAY)}`}
           actions={
-            <Link href="/kunder/ny" className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 text-white text-xs font-medium rounded-lg hover:bg-zinc-700 transition-colors">
-              + Legg til kunde
-            </Link>
+            <div className="flex items-center gap-2">
+              <button onClick={load} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-200 transition-colors">↻ Oppdater</button>
+              <Link href="/kunder/ny" className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 text-white text-xs font-medium rounded-lg hover:bg-zinc-700 transition-colors">+ Legg til kunde</Link>
+            </div>
           }
         />
         <main className="flex-1 flex items-center justify-center p-12">
@@ -176,11 +194,20 @@ export default function DashboardPage() {
     <>
       <Topbar
         title="Dashboard"
-        subtitle={`Oversikt per ${fmt(TODAY)}`}
+        subtitle={lastUpdated ? `Oppdatert ${lastUpdated.toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' })}` : `Oversikt per ${fmt(TODAY)}`}
         actions={
-          <Link href="/kunder/ny" className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 text-white text-xs font-medium rounded-lg hover:bg-zinc-700 transition-colors">
-            + Legg til kunde
-          </Link>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={load}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-200 transition-colors"
+              title="Oppdater dashboard"
+            >
+              ↻ Oppdater
+            </button>
+            <Link href="/kunder/ny" className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 text-white text-xs font-medium rounded-lg hover:bg-zinc-700 transition-colors">
+              + Legg til kunde
+            </Link>
+          </div>
         }
       />
 
