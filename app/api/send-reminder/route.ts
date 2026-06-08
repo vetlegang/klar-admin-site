@@ -12,7 +12,7 @@ import type { OptReminder } from '@/lib/reminders';
  *
  * Requires env vars:
  *   RESEND_API_KEY   – your Resend API key (https://resend.com)
- *   EMAIL_FROM       – sender address (must be verified in Resend, e.g. "Klyr Admin <noreply@klyr.no>")
+ *   EMAIL_FROM       – sender address (must be verified in Resend, e.g. "Fujii Admin <noreply@fujii.no>")
  */
 export async function POST(req: NextRequest) {
   try {
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     };
 
     const apiKey = process.env.RESEND_API_KEY;
-    const from = process.env.EMAIL_FROM ?? 'Klyr Admin <noreply@klyr.no>';
+    const from = process.env.EMAIL_FROM ?? 'Fujii Admin <noreply@fujii.no>';
 
     if (!apiKey) {
       return NextResponse.json(

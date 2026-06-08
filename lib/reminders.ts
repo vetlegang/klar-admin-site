@@ -93,7 +93,7 @@ export function buildReminderEmailHtml(
   <p>Estimert kampanjeslutt: <strong>${reminder.deadlineDate}</strong></p>
   ${schemaUrl ? `<p><a href="${schemaUrl}" style="background: #18181b; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; display: inline-block; margin-top: 8px;">Åpne skjema for optimaliserte ads →</a></p>` : ''}
   <hr style="border: none; border-top: 1px solid #e4e4e7; margin: 24px 0;">
-  <p style="font-size: 12px; color: #71717a;">Klyr Admin – automatisk påminnelse</p>
+  <p style="font-size: 12px; color: #71717a;">Fujii Admin – automatisk påminnelse</p>
 </body>
 </html>
   `.trim();

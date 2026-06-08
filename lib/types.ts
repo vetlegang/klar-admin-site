@@ -105,6 +105,12 @@ export interface Client {
   telefon: string;
   nettside: string;
   bransje: string;
+  // Extra company info from enrichment
+  orgNumber?: string;
+  adresse?: string;
+  postnummer?: string;
+  by?: string;
+  kortBeskrivelse?: string;
   status: PipelineStage;
   pakke: string;
   verdi: number;

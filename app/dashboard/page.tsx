@@ -108,6 +108,17 @@ export default function DashboardPage() {
     .filter((c) => c.verdi > 0 && !['Tapt', 'Pauset'].includes(c.status))
     .reduce((sum, c) => sum + c.verdi, 0);
 
+  // Campaign results aggregation
+  const allCampaigns = clients.flatMap((c) =>
+    (c.campaigns ?? []).map((camp) => ({ ...camp, bedrift: c.bedrift, clientId: c.id }))
+  );
+  const totalAdSpend = allCampaigns.reduce((s, c) => s + (Number(c.adSpend) || 0), 0);
+  const totalSalg = allCampaigns.reduce((s, c) => s + (Number(c.results?.salg) || 0), 0);
+  const totalLeads = allCampaigns.reduce((s, c) => s + (Number(c.results?.leads) || 0), 0);
+  const totalRevenue = allCampaigns.reduce((s, c) => s + (Number(c.results?.omsetning) || 0), 0);
+  const avgROAS = totalAdSpend > 0 && totalRevenue > 0 ? (totalRevenue / totalAdSpend).toFixed(2) : null;
+  const avgCPL = totalLeads > 0 && totalAdSpend > 0 ? Math.round(totalAdSpend / totalLeads) : null;
+
   const oppgaverIDag = tasks.filter((t) =>
     t.frist === TODAY && t.status !== 'Ferdig' &&
     (userFilter === 'Alle' || t.ansvarlig === userFilter)
@@ -203,8 +214,66 @@ export default function DashboardPage() {
           <StatCard label="Aktive kunder" value={aktiveKunder.length} />
           <StatCard label="Leads / Kontaktet" value={leadsIMåneden.length} />
           <StatCard label="Prøvepakker betalt" value={prøvepakkerBetalt.length} />
-          <StatCard label="Verdi i pipeline" value={`${(verdiIPipeline / 1000).toFixed(0)}k`} suffix="kr" />
+          <StatCard label="Totalt ad spend" value={totalAdSpend > 0 ? `${(totalAdSpend / 1000).toFixed(0)}k` : '—'} suffix={totalAdSpend > 0 ? 'kr' : ''} />
         </div>
+
+        {/* Campaign results */}
+        {allCampaigns.length > 0 && (
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-zinc-900">Kampanjeresultater – alle kunder</h2>
+              <span className="text-xs text-gray-400">{allCampaigns.length} kampanje{allCampaigns.length !== 1 ? 'r' : ''}</span>
+            </div>
+
+            {/* Summary row */}
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 mb-5">
+              <ResultStat label="Total ad spend" value={`${totalAdSpend.toLocaleString('nb-NO')} kr`} />
+              {totalRevenue > 0 && <ResultStat label="Total omsetning" value={`${totalRevenue.toLocaleString('nb-NO')} kr`} />}
+              {totalSalg > 0 && <ResultStat label="Totalt salg" value={totalSalg.toString()} />}
+              {totalLeads > 0 && <ResultStat label="Totalt leads" value={totalLeads.toString()} />}
+              {avgROAS && <ResultStat label="Gj.snitt ROAS" value={`${avgROAS}x`} highlight={parseFloat(avgROAS) >= 3} />}
+              {avgCPL && <ResultStat label="Gj.snitt CPL" value={`${avgCPL.toLocaleString('nb-NO')} kr`} />}
+            </div>
+
+            {/* Per-customer breakdown */}
+            <div className="space-y-2">
+              {clients
+                .filter((c) => (c.campaigns?.length ?? 0) > 0)
+                .map((c) => {
+                  const cCampaigns = c.campaigns ?? [];
+                  const cSpend = cCampaigns.reduce((s, x) => s + (Number(x.adSpend) || 0), 0);
+                  const cRev = cCampaigns.reduce((s, x) => s + (Number(x.results?.omsetning) || 0), 0);
+                  const cLeads = cCampaigns.reduce((s, x) => s + (Number(x.results?.leads) || 0), 0);
+                  const cSalg = cCampaigns.reduce((s, x) => s + (Number(x.results?.salg) || 0), 0);
+                  const cROAS = cSpend > 0 && cRev > 0 ? (cRev / cSpend).toFixed(2) : null;
+                  const cCPL = cLeads > 0 && cSpend > 0 ? Math.round(cSpend / cLeads) : null;
+                  return (
+                    <Link
+                      key={c.id}
+                      href={`/kunder/${c.id}?tab=kampanjer`}
+                      className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors group"
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <span className="text-sm font-medium text-zinc-900 truncate group-hover:underline">{c.bedrift}</span>
+                        <span className="text-xs text-gray-400 shrink-0">{cCampaigns.length} runde{cCampaigns.length !== 1 ? 'r' : ''}</span>
+                      </div>
+                      <div className="flex items-center gap-4 shrink-0 text-xs text-gray-600">
+                        <span>{cSpend.toLocaleString('nb-NO')} kr spend</span>
+                        {cSalg > 0 && <span>{cSalg} salg</span>}
+                        {cLeads > 0 && <span>{cLeads} leads</span>}
+                        {cROAS && (
+                          <span className={`font-semibold ${parseFloat(cROAS) >= 3 ? 'text-green-600' : parseFloat(cROAS) >= 1.5 ? 'text-yellow-600' : 'text-red-500'}`}>
+                            {cROAS}x ROAS
+                          </span>
+                        )}
+                        {cCPL && <span>CPL: {cCPL.toLocaleString('nb-NO')} kr</span>}
+                      </div>
+                    </Link>
+                  );
+                })}
+            </div>
+          </div>
+        )}
 
         {/* Må gjøres nå */}
         {mustDoNow.length > 0 && (
@@ -447,6 +516,15 @@ function StatCard({ label, value, suffix, highlight, link }: {
     </div>
   );
   return link ? <Link href={link}>{inner}</Link> : inner;
+}
+
+function ResultStat({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className="bg-gray-50 rounded-lg p-3">
+      <p className="text-xs text-gray-500 mb-0.5">{label}</p>
+      <p className={`text-lg font-semibold tabular-nums ${highlight ? 'text-green-600' : 'text-zinc-900'}`}>{value}</p>
+    </div>
+  );
 }
 
 function ActivityDot({ type }: { type: string }) {

@@ -49,9 +49,12 @@ function ResendSettings() {
       <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
         <p className="text-xs font-medium text-blue-800 mb-1">Oppsett (én gang)</p>
         <ol className="text-xs text-blue-700 space-y-1 list-decimal list-inside">
-          <li>Gå til <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="underline">resend.com</a> og opprett gratis konto</li>
-          <li>Generer en API-nøkkel og legg den i <code className="bg-blue-100 px-1 rounded">.env.local</code> som <code className="bg-blue-100 px-1 rounded">RESEND_API_KEY=re_xxx</code></li>
-          <li>Legg til <code className="bg-blue-100 px-1 rounded">EMAIL_FROM=Klyr Admin &lt;noreply@klyr.no&gt;</code> (domenet må verifiseres i Resend)</li>
+          <li>Gå til <a href="https://resend.com/api-keys" target="_blank" rel="noopener noreferrer" className="underline">resend.com/api-keys</a> og kopier (eller opprett) API-nøkkel</li>
+          <li>Gå til Vercel → Settings → Environment Variables og legg til:<br />
+            <code className="bg-blue-100 px-1 rounded">RESEND_API_KEY=re_xxx</code><br />
+            <code className="bg-blue-100 px-1 rounded">EMAIL_FROM=Fujii Admin &lt;noreply@fujii.no&gt;</code>
+          </li>
+          <li>Du kan bruke <strong>samme API-nøkkel</strong> som tilhører fujii.no-kontoen</li>
           <li>Fyll inn e-postadresser og skjema-URL under, og lagre</li>
         </ol>
       </div>

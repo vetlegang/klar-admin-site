@@ -20,10 +20,8 @@ export default function Sidebar() {
 
   const nav = [
     { href: '/dashboard', label: 'Dashboard', icon: GridIcon, badge: 0 },
+    { href: '/kunder', label: 'Kunder', icon: UsersIcon, badge: 0 },
     { href: '/varsler', label: 'Varsler', icon: BellIcon, badge: alertCount },
-    { href: '/kunder', label: 'Kunder / Pipeline', icon: UsersIcon, badge: 0 },
-    { href: '/oppgaver', label: 'Oppgaver', icon: CheckIcon, badge: 0 },
-    { href: '/pakker', label: 'Pakker', icon: PackageIcon, badge: 0 },
     { href: '/innstillinger', label: 'Innstillinger', icon: SettingsIcon, badge: 0 },
   ];
 
