@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { generateAlerts } from '@/lib/generate-alerts';
+import { updateClient } from '@/lib/customer-store';
 import type { Client, Alert, AlertType } from '@/lib/types';
 
 const severityConfig = {
@@ -66,7 +67,13 @@ export default function Kontrollpanel({ client }: { client: Client }) {
   const [actionInput, setActionInput] = useState(client.nesteAction);
   const [followedUp, setFollowedUp] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [dismissed, setDismissed] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    try {
+      const raw = localStorage.getItem(`fujii_dismissed_${client.id}`);
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch { return new Set(); }
+  });
 
   // Build a live client snapshot for alert generation
   const liveClient = useMemo((): Client => ({
@@ -89,27 +96,46 @@ export default function Kontrollpanel({ client }: { client: Client }) {
     [liveClient, dismissed]
   );
 
+  function saveDismissed(next: Set<string>) {
+    setDismissed(next);
+    localStorage.setItem(`fujii_dismissed_${client.id}`, JSON.stringify([...next]));
+  }
+
   function toggleCheck(key: keyof CheckState) {
     const nextVal = !checks[key];
-    setChecks((prev) => ({ ...prev, [key]: nextVal }));
+    const nextChecks = { ...checks, [key]: nextVal };
+    setChecks(nextChecks);
+    // Persist checkbox to client in localStorage
+    const clientUpdate: Partial<Client> = {};
+    if (key === 'invoiceSent') clientUpdate.invoiceSent = nextVal;
+    if (key === 'invoicePaid') clientUpdate.betalingsstatus = nextVal ? 'Betalt' : 'Ikke betalt';
+    if (key === 'contractSigned') clientUpdate.kontraktstatus = nextVal ? 'Signert' : 'Ikke signert';
+    if (key === 'contentMottatt') clientUpdate.contentMottatt = nextVal;
+    if (key === 'metaAccessReceived') clientUpdate.metaAccessReceived = nextVal;
+    if (key === 'brandAssetsReceived') clientUpdate.brandAssetsReceived = nextVal;
+    if (key === 'onboardingComplete') clientUpdate.onboardingComplete = nextVal;
+    if (key === 'adsLive') clientUpdate.adsLive = nextVal;
+    if (key === 'resultsChecked') clientUpdate.resultsChecked = nextVal;
+    if (key === 'reportSent') clientUpdate.reportSent = nextVal;
+    updateClient(client.id, clientUpdate);
     // Auto-dismiss the related alert when checking
     const alertType = CHECKBOX_RESOLVES[key];
     if (alertType && nextVal) {
-      setDismissed((prev) => new Set([...prev, `${client.id}-${alertType}`]));
+      saveDismissed(new Set([...dismissed, `${client.id}-${alertType}`]));
     }
   }
 
   function saveAction() {
     setNesteAction(actionInput);
     setEditingAction(false);
-    // If action was missing, dismiss that alert
+    updateClient(client.id, { nesteAction: actionInput });
     if (actionInput) {
-      setDismissed((prev) => new Set([...prev, `${client.id}-mangler_neste_action`]));
+      saveDismissed(new Set([...dismissed, `${client.id}-mangler_neste_action`]));
     }
   }
 
   function dismissAlert(id: string) {
-    setDismissed((prev) => new Set([...prev, id]));
+    saveDismissed(new Set([...dismissed, id]));
   }
 
   const emailTemplate = buildEmailTemplate(client, nesteAction);
