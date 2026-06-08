@@ -7,6 +7,33 @@ import type { Client, RoundData } from '@/lib/types';
 
 const TODAY = () => new Date().toISOString().split('T')[0];
 
+function daysUntil(dateStr: string): number {
+  const diff = new Date(dateStr).getTime() - new Date(TODAY()).getTime();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+function getDateBadge(dateStr: string, isDone: boolean): { label: string; color: string } | null {
+  if (isDone || !dateStr) return null;
+  const days = daysUntil(dateStr);
+  if (days < 0) return { label: `${Math.abs(days)}d forfalt`, color: 'bg-red-100 text-red-700 border-red-200' };
+  if (days === 0) return { label: 'I dag!', color: 'bg-red-100 text-red-700 border-red-200' };
+  if (days <= 3) return { label: `${days}d igjen`, color: 'bg-orange-100 text-orange-700 border-orange-200' };
+  if (days <= 7) return { label: `${days}d igjen`, color: 'bg-yellow-100 text-yellow-700 border-yellow-200' };
+  return null;
+}
+
+function getMissingAlerts(rd: RoundData, isFirst: boolean): string[] {
+  const warnings: string[] = [];
+  if (rd.kampanjeLive) {
+    if (isFirst && !rd.kontraktSignert) warnings.push('Kontrakt ikke signert');
+    if (!rd.addSpendBetalt) warnings.push('Add spend ikke betalt');
+    if (!rd.serviceInvoiceSent) warnings.push('Faktura for honorar ikke sendt');
+  }
+  if (rd.opt1Done && !rd.opt1MoteBooket) warnings.push('Møte for opt. 1 ikke booket');
+  if (rd.opt2Done && !rd.opt2MoteBooket) warnings.push('Møte for opt. 2 ikke booket');
+  return warnings;
+}
+
 function fmt(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('nb-NO', {
     day: '2-digit',
@@ -152,6 +179,7 @@ export default function LopSection({
   const isFirstRound = selectedRound === 'Testpakke';
   const current = getRound(selectedRound);
   const progress = calcProgress(current, isFirstRound);
+  const missingAlerts = getMissingAlerts(current, isFirstRound);
 
   // Which rounds have been started?
   const usedRounds = ROUND_OPTIONS.filter(
@@ -219,6 +247,16 @@ export default function LopSection({
         </div>
       </div>
 
+      {/* Inline alerts */}
+      {missingAlerts.length > 0 && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 space-y-1">
+          <p className="text-xs font-semibold text-yellow-800 mb-1.5">⚠ Husk å huke av:</p>
+          {missingAlerts.map((w) => (
+            <p key={w} className="text-xs text-yellow-700">• {w}</p>
+          ))}
+        </div>
+      )}
+
       {/* Milestone steps */}
       <div className="relative">
         {/* Vertical line */}
@@ -231,6 +269,7 @@ export default function LopSection({
             const done = !!(current[step.key] as boolean | undefined);
             const dateVal = (current[step.dateKey] as string | undefined) ?? '';
             const isExpanded = expandedDate === step.key;
+            const dateBadge = getDateBadge(dateVal, done);
 
             // Determine if step is "reachable" (previous done)
             const prevStep = idx > 0 ? visibleSteps[idx - 1] : null;
@@ -262,9 +301,16 @@ export default function LopSection({
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       <span className="text-base leading-none">{step.icon}</span>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium ${done ? 'text-green-800 line-through' : prevDone ? 'text-zinc-900' : 'text-gray-400'}`}>
-                          {step.label}
-                        </p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className={`text-sm font-medium ${done ? 'text-green-800 line-through' : prevDone ? 'text-zinc-900' : 'text-gray-400'}`}>
+                            {step.label}
+                          </p>
+                          {dateBadge && (
+                            <span className={`text-xs font-semibold px-1.5 py-0.5 rounded border ${dateBadge.color}`}>
+                              {dateBadge.label}
+                            </span>
+                          )}
+                        </div>
                         {done && dateVal && (
                           <p className="text-xs text-green-600 mt-0.5">{fmt(dateVal)}</p>
                         )}
