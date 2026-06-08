@@ -17,7 +17,7 @@ export function generateInternalAlertEmail(
     : '';
 
   return {
-    subject: `Klyr-varsel: ${alert.title}`,
+    subject: `Fujii-varsel: ${alert.title}`,
     to: assignedUser === 'Vetle G.' ? 'vetle@klyr.no' : 'markus@klyr.no',
     body: `Hei ${firstName},
 
@@ -28,10 +28,10 @@ Varsel: ${alert.title}
 Hva må gjøres: ${alert.recommendedAction}
 ${dueLine}
 
-Åpne Klyr Admin for å håndtere dette.
+Åpne Fujii Admin for å håndtere dette.
 
 Mvh
-Klyr Admin`,
+Fujii Admin`,
   };
 }
 
@@ -49,7 +49,7 @@ export function generateDailySummaryEmail(
     .join('\n');
 
   return {
-    subject: `Klyr daglig oppsummering – ${alerts.length} åpne varsler`,
+    subject: `Fujii daglig oppsummering – ${alerts.length} åpne varsler`,
     to: user === 'Vetle G.' ? 'vetle@klyr.no' : 'markus@klyr.no',
     body: `Hei ${firstName},
 
@@ -61,10 +61,10 @@ Totalt åpne: ${alerts.length}
 
 ${lines}
 
-Logg inn på Klyr Admin for full oversikt.
+Logg inn på Fujii Admin for full oversikt.
 
 Mvh
-Klyr Admin`,
+Fujii Admin`,
   };
 }
 
@@ -90,7 +90,7 @@ export function generateFollowUpEmail(
   const nextLine = client.nesteAction ? `\nNeste steg fra vår side er: ${client.nesteAction}.` : '';
 
   return {
-    subject: 'Oppfølging fra Klyr',
+    subject: 'Oppfølging fra Fujii',
     to: client.epost,
     body: `Hei ${client.kontaktperson},
 
@@ -110,13 +110,13 @@ export function generateOffboardingEmail(
   user: string
 ): EmailTemplate {
   return {
-    subject: 'Takk for samarbeidet',
+    subject: 'Takk for samarbeidet – Fujii',
     to: client.epost,
     body: `Hei ${client.kontaktperson},
 
 Tusen takk for samarbeidet så langt.
 
-Vi setter pris på at dere har valgt å jobbe med Klyr, og håper leveransen har vært nyttig for dere.
+Vi setter pris på at dere har valgt å jobbe med Fujii, og håper leveransen har vært nyttig for dere.
 
 Dersom dere ønsker å starte opp igjen senere, eller trenger hjelp med nye kampanjer, er det bare å ta kontakt.
 

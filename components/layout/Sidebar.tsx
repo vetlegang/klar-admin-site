@@ -32,9 +32,9 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="flex items-center gap-2 px-5 h-14 border-b border-gray-200">
         <div className="flex items-center justify-center w-7 h-7 rounded-md bg-zinc-900">
-          <span className="text-white text-xs font-bold tracking-tight">K</span>
+          <span className="text-white text-xs font-bold tracking-tight">F</span>
         </div>
-        <span className="text-sm font-semibold tracking-tight text-zinc-900">Klyr Admin</span>
+        <span className="text-sm font-semibold tracking-tight text-zinc-900">Fujii Admin</span>
       </div>
 
       {/* Nav */}
@@ -78,7 +78,7 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div className="px-5 py-4 border-t border-gray-200">
-        <p className="text-xs text-gray-400">Klyr © 2026</p>
+        <p className="text-xs text-gray-400">Fujii © 2026</p>
       </div>
     </aside>
   );
