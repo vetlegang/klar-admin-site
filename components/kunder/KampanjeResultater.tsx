@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { updateClient } from '@/lib/customer-store';
 import { META_OBJECTIVES, AD_SPEND_OPTIONS, ROUND_OPTIONS } from '@/lib/types';
 import type { Client, Campaign, MetaObjective } from '@/lib/types';
+import KampanjeRapport from './KampanjeRapport';
 
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -518,6 +519,12 @@ export default function KampanjeResultater({
                       {c.notes && (
                         <p className="text-xs text-gray-500 mt-2 italic">{c.notes}</p>
                       )}
+
+                      <KampanjeRapport
+                        bedrift={client.bedrift}
+                        bransje={client.bransje}
+                        campaign={c}
+                      />
                     </div>
                   ))}
                 </div>
