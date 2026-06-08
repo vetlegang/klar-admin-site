@@ -19,7 +19,7 @@ function fmt(dateStr: string) {
 }
 function isOverdue(dateStr: string | null) {
   if (!dateStr) return false;
-  return dateStr < TODAY;
+  return dateStr < new Date().toISOString().split('T')[0];
 }
 
 const severityColors = {
