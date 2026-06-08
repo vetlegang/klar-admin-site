@@ -131,7 +131,10 @@ Inkluder kun stats for tall som faktisk er oppgitt. ROAS over 2.0 er bra for Met
   const text = data.content?.[0]?.text ?? '';
 
   try {
-    const report: ReportData = JSON.parse(text);
+    // Claude sometimes wraps JSON in markdown code fences — strip them
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const cleaned = jsonMatch ? jsonMatch[0] : text;
+    const report: ReportData = JSON.parse(cleaned);
     return NextResponse.json({ report });
   } catch {
     return NextResponse.json({ error: 'Claude returnerte ugyldig JSON', raw: text }, { status: 500 });

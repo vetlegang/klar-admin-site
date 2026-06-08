@@ -96,7 +96,20 @@ export default function DashboardPage() {
     [allClients, userFilter]
   );
 
-  const allAlerts = useMemo(() => generateAlerts(allClients), [allClients]);
+  const allAlerts = useMemo(() => {
+    const raw = generateAlerts(allClients);
+    // Filter out alerts dismissed via Kontrollpanel ("Løst" / "Snooze")
+    return raw.filter((alert) => {
+      try {
+        const stored = localStorage.getItem(`fujii_dismissed_${alert.clientId}`);
+        if (!stored) return true;
+        const dismissedIds: string[] = JSON.parse(stored);
+        return !dismissedIds.includes(alert.id);
+      } catch {
+        return true;
+      }
+    });
+  }, [allClients]);
 
   const alerts = useMemo(() =>
     userFilter === 'Alle' ? allAlerts : allAlerts.filter((a) => a.assignedTo === userFilter),
