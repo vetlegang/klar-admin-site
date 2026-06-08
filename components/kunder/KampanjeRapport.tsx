@@ -23,7 +23,7 @@ export default function KampanjeRapport({ bedrift, bransje, campaign }: Props) {
       const input: ReportInput = {
         bedrift,
         bransje,
-        roundName: campaign.name,
+        roundName: campaign.round,
         adSpend: Number(campaign.adSpend) || 0,
         results: campaign.results,
         period: campaign.startDate
