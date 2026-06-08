@@ -113,9 +113,9 @@ export default function DashboardPage() {
     (c.campaigns ?? []).map((camp) => ({ ...camp, bedrift: c.bedrift, clientId: c.id }))
   );
   const totalAdSpend = allCampaigns.reduce((s, c) => s + (Number(c.adSpend) || 0), 0);
-  const totalSalg = allCampaigns.reduce((s, c) => s + (Number(c.results?.salg) || 0), 0);
+  const totalConversions = allCampaigns.reduce((s, c) => s + (Number(c.results?.conversions) || 0), 0);
   const totalLeads = allCampaigns.reduce((s, c) => s + (Number(c.results?.leads) || 0), 0);
-  const totalRevenue = allCampaigns.reduce((s, c) => s + (Number(c.results?.omsetning) || 0), 0);
+  const totalRevenue = allCampaigns.reduce((s, c) => s + (Number(c.results?.revenue) || 0), 0);
   const avgROAS = totalAdSpend > 0 && totalRevenue > 0 ? (totalRevenue / totalAdSpend).toFixed(2) : null;
   const avgCPL = totalLeads > 0 && totalAdSpend > 0 ? Math.round(totalAdSpend / totalLeads) : null;
 
@@ -229,7 +229,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 mb-5">
               <ResultStat label="Total ad spend" value={`${totalAdSpend.toLocaleString('nb-NO')} kr`} />
               {totalRevenue > 0 && <ResultStat label="Total omsetning" value={`${totalRevenue.toLocaleString('nb-NO')} kr`} />}
-              {totalSalg > 0 && <ResultStat label="Totalt salg" value={totalSalg.toString()} />}
+              {totalConversions > 0 && <ResultStat label="Totalt konverteringer" value={totalConversions.toString()} />}
               {totalLeads > 0 && <ResultStat label="Totalt leads" value={totalLeads.toString()} />}
               {avgROAS && <ResultStat label="Gj.snitt ROAS" value={`${avgROAS}x`} highlight={parseFloat(avgROAS) >= 3} />}
               {avgCPL && <ResultStat label="Gj.snitt CPL" value={`${avgCPL.toLocaleString('nb-NO')} kr`} />}
@@ -242,9 +242,9 @@ export default function DashboardPage() {
                 .map((c) => {
                   const cCampaigns = c.campaigns ?? [];
                   const cSpend = cCampaigns.reduce((s, x) => s + (Number(x.adSpend) || 0), 0);
-                  const cRev = cCampaigns.reduce((s, x) => s + (Number(x.results?.omsetning) || 0), 0);
+                  const cRev = cCampaigns.reduce((s, x) => s + (Number(x.results?.revenue) || 0), 0);
                   const cLeads = cCampaigns.reduce((s, x) => s + (Number(x.results?.leads) || 0), 0);
-                  const cSalg = cCampaigns.reduce((s, x) => s + (Number(x.results?.salg) || 0), 0);
+                  const cConv = cCampaigns.reduce((s, x) => s + (Number(x.results?.conversions) || 0), 0);
                   const cROAS = cSpend > 0 && cRev > 0 ? (cRev / cSpend).toFixed(2) : null;
                   const cCPL = cLeads > 0 && cSpend > 0 ? Math.round(cSpend / cLeads) : null;
                   return (
@@ -259,7 +259,7 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex items-center gap-4 shrink-0 text-xs text-gray-600">
                         <span>{cSpend.toLocaleString('nb-NO')} kr spend</span>
-                        {cSalg > 0 && <span>{cSalg} salg</span>}
+                        {cConv > 0 && <span>{cConv} konv.</span>}
                         {cLeads > 0 && <span>{cLeads} leads</span>}
                         {cROAS && (
                           <span className={`font-semibold ${parseFloat(cROAS) >= 3 ? 'text-green-600' : parseFloat(cROAS) >= 1.5 ? 'text-yellow-600' : 'text-red-500'}`}>
