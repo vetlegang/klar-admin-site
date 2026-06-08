@@ -109,12 +109,13 @@ const NOTIFICATION_TYPE_LABELS: Record<keyof TeamMember['notificationTypes'], st
 };
 
 export default function InnstillingerPage() {
-  const [agencyName, setAgencyName] = useState('Klyr');
-  const [email, setEmail] = useState('hei@klyr.no');
+  const [agencyName, setAgencyName] = useState('Fujii');
+  const [email, setEmail] = useState('hei@fujii.no');
   const [saved, setSaved] = useState(false);
   const [team, setTeam] = useState<TeamMember[]>(mockTeam);
   const [teamSaved, setTeamSaved] = useState(false);
   const [testVarselMsg, setTestVarselMsg] = useState('');
+  const [testVarselStatus, setTestVarselStatus] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle');
 
   function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -137,14 +138,45 @@ export default function InnstillingerPage() {
     setTimeout(() => setTeamSaved(false), 2000);
   }
 
-  function handleTestVarsel(name: string) {
-    setTestVarselMsg(`Testvarsel klart for ${name}. Ekte e-postutsending kobles på senere.`);
-    setTimeout(() => setTestVarselMsg(''), 3000);
+  async function handleTestVarsel(memberEmail: string, memberName: string) {
+    setTestVarselStatus('sending');
+    setTestVarselMsg(`Sender til ${memberEmail}…`);
+    try {
+      const res = await fetch('/api/send-reminder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reminder: {
+            clientId: 'test',
+            clientName: 'Testkundevarsling',
+            round: 'Testpakke',
+            daysLeft: 5,
+            kampanjeLiveDato: new Date(Date.now() - 20 * 86400000).toISOString().split('T')[0],
+            deadlineDate: new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0],
+            isOverdue: false,
+          },
+          recipients: [memberEmail],
+          schemaUrl: '',
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setTestVarselStatus('ok');
+        setTestVarselMsg(`✓ Testepost sendt til ${memberEmail}`);
+      } else {
+        setTestVarselStatus('error');
+        setTestVarselMsg(`Feil: ${data.error ?? 'Ukjent feil'}`);
+      }
+    } catch (err) {
+      setTestVarselStatus('error');
+      setTestVarselMsg(`Nettverksfeil: ${String(err)}`);
+    }
+    setTimeout(() => { setTestVarselStatus('idle'); setTestVarselMsg(''); }, 5000);
   }
 
   return (
     <>
-      <Topbar title="Innstillinger" subtitle="Generelle innstillinger for Klyr Admin" />
+      <Topbar title="Innstillinger" subtitle="Generelle innstillinger for Fujii Admin" />
       <main className="flex-1 p-6 max-w-2xl">
         <div className="space-y-6">
 
@@ -239,10 +271,11 @@ export default function InnstillingerPage() {
 
                   <div className="flex gap-2 pt-1">
                     <button
-                      onClick={() => handleTestVarsel(m.navn)}
-                      className="px-3 py-1.5 border border-gray-200 text-xs text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
+                      onClick={() => handleTestVarsel(m.epost, m.navn)}
+                      disabled={testVarselStatus === 'sending'}
+                      className="px-3 py-1.5 border border-gray-200 text-xs text-gray-600 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                     >
-                      Send testvarsel
+                      {testVarselStatus === 'sending' ? 'Sender…' : 'Send testepost'}
                     </button>
                   </div>
                 </div>
@@ -250,7 +283,11 @@ export default function InnstillingerPage() {
             </div>
 
             {testVarselMsg && (
-              <p className="mt-3 text-xs text-blue-700 bg-blue-50 border border-blue-200 px-3 py-2 rounded-lg">{testVarselMsg}</p>
+              <p className={`mt-3 text-xs px-3 py-2 rounded-lg border ${
+                testVarselStatus === 'ok' ? 'text-green-700 bg-green-50 border-green-200' :
+                testVarselStatus === 'error' ? 'text-red-700 bg-red-50 border-red-200' :
+                'text-blue-700 bg-blue-50 border-blue-200'
+              }`}>{testVarselMsg}</p>
             )}
 
             <div className="flex items-center gap-3 mt-4">
@@ -295,7 +332,7 @@ export default function InnstillingerPage() {
           </SettingsSection>
 
           {/* Info */}
-          <SettingsSection title="Om Klyr Admin">
+          <SettingsSection title="Om Fujii Admin">
             <div className="space-y-1.5 text-xs text-gray-500">
               <p>Versjon: <span className="text-zinc-900 font-medium">0.3.0 – Control Center</span></p>
               <p>Bygget med Next.js 16 + Tailwind CSS v4</p>
