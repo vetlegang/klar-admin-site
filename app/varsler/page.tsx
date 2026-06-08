@@ -41,14 +41,26 @@ export default function VarslerPage() {
   const [userFilter, setUserFilter] = useState<UserFilter>('Alle');
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('Alle');
   const [overrides, setOverrides] = useState<Record<string, 'done' | 'snoozed'>>({});
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     setClients(getClients());
+    try {
+      const raw = localStorage.getItem('fujii_varsel_overrides');
+      if (raw) setOverrides(JSON.parse(raw));
+    } catch { /* ignore */ }
+    setLoaded(true);
   }, []);
+
+  function saveOverrides(next: Record<string, 'done' | 'snoozed'>) {
+    setOverrides(next);
+    localStorage.setItem('fujii_varsel_overrides', JSON.stringify(next));
+  }
 
   const allAlerts = useMemo(() => generateAlerts(clients), [clients]);
 
   const visible = useMemo(() => {
+    if (!loaded) return [];
     return allAlerts
       .filter((a) => {
         if (overrides[a.id]) return false;
@@ -57,16 +69,18 @@ export default function VarslerPage() {
         return true;
       })
       .sort((a, b) => severityConfig[a.severity].order - severityConfig[b.severity].order);
-  }, [allAlerts, userFilter, severityFilter, overrides]);
+  }, [allAlerts, userFilter, severityFilter, overrides, loaded]);
 
   function markDone(id: string) {
-    setOverrides((p) => ({ ...p, [id]: 'done' }));
+    saveOverrides({ ...overrides, [id]: 'done' });
   }
   function snooze(id: string) {
-    setOverrides((p) => ({ ...p, [id]: 'snoozed' }));
+    saveOverrides({ ...overrides, [id]: 'snoozed' });
   }
   function restore(id: string) {
-    setOverrides((p) => { const n = { ...p }; delete n[id]; return n; });
+    const n = { ...overrides };
+    delete n[id];
+    saveOverrides(n);
   }
 
   const snoozedAlerts = allAlerts.filter((a) => overrides[a.id] === 'snoozed');
